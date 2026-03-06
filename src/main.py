@@ -1,39 +1,39 @@
-import pandas as pd
+from preprocess import load_and_clean_data
+from neighbors import find_leader_vehicle
+from metrics import add_safety_metrics
+from scenarios import add_scenario_flags, extract_events
+from windowing import save_event_windows
 
-# Load your CSV file
-file_path = r"C:\Users\suwan\Downloads\Next_Generation_Simulation_(NGSIM)_Vehicle_Trajectories_and_Supporting_Data_20260301.csv"
 
-df = pd.read_csv(file_path, dtype=str, low_memory=False)
+file_path = r"C:\Users\suwan\Downloads\us101_1118847220800_1118847821000.csv"
 
-print("Dataset loaded successfully.")
+df = load_and_clean_data(file_path)
+df = find_leader_vehicle(df)
+df = add_safety_metrics(df)
+df = add_scenario_flags(df)
+events = extract_events(df)
+for k, v in events.items():
+    print(k, len(v))
+
+summary_df = save_event_windows(
+    df,
+    events,
+    output_dir="outputs_windows",
+    max_per_type=100
+)
+
+
+print("Leader detection completed")
+print(df[["Vehicle_ID", "Frame_ID", "Lane_ID", "leader_id", "gap_distance"]].head())
+print("Clean dataset size:", len(df))
+print("Metrics added.")
+print(df[["Vehicle_ID", "Frame_ID", "Lane_ID", "leader_id", "gap_distance",
+      "v_Vel", "leader_vel", "rel_vel", "time_headway_s", "ttc_s"]].head(10))
 print(df.head())
-
-# Convert important columns to numeric
-df["Global_Time"] = pd.to_numeric(df["Global_Time"], errors="coerce")
-df["v_Vel"] = pd.to_numeric(df["v_Vel"], errors="coerce")
-df["Lane_ID"] = pd.to_numeric(df["Lane_ID"], errors="coerce")
-df["Vehicle_ID"] = pd.to_numeric(df["Vehicle_ID"], errors="coerce")
-
-print("Unique Lane_ID values:")
-print(sorted(df["Lane_ID"].dropna().unique()))
-
-print("\nVelocity statistics:")
-print(df["v_Vel"].describe())
-
-# Get vehicle with most frames
-counts = df["Vehicle_ID"].value_counts()
-vehicle_id = counts.index[0]
-
-print("Selected vehicle ID:", vehicle_id)
-print("Number of rows for this vehicle:", counts.iloc[0])
-
-vehicle_data = df[df["Vehicle_ID"] == vehicle_id]
-vehicle_data = vehicle_data.sort_values("Global_Time")
-
-time_diffs = vehicle_data["Global_Time"].diff()
-
-print("\nTime difference statistics (milliseconds):")
-print(time_diffs.describe())
-
-counts = df["Vehicle_ID"].value_counts()
-print(counts.head(10))
+print("\nExamples:")
+print("near_collision:", events["near_collision"][:3])
+print("sudden_braking:", events["sudden_braking"][:3])
+print("lane_change:", events["lane_change"][:3])
+print("car_following:", events["car_following"][:3])
+print("\nSaved window summary:")
+print(summary_df.head())
