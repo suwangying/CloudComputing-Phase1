@@ -36,7 +36,8 @@ def extract_scenario_window(df: pd.DataFrame, vehicle_id: int, mid_frame: int, s
         return pd.DataFrame()
 
     # get ego position by frame
-    ego_positions = ego_window[["Frame_ID", "Local_Y"]].rename(columns={"Local_Y": "ego_Local_Y"})
+    ego_positions = ego_window[["Frame_ID", "Local_Y"]].rename(
+        columns={"Local_Y": "ego_Local_Y"})
 
     # all vehicles in the same frame window
     frame_window_df = df[
@@ -50,7 +51,8 @@ def extract_scenario_window(df: pd.DataFrame, vehicle_id: int, mid_frame: int, s
     # keep ego + nearby surrounding vehicles
     scenario_window = merged[
         (merged["Vehicle_ID"] == vehicle_id) |
-        ((merged["Local_Y"] - merged["ego_Local_Y"]).abs() <= SURROUNDING_DISTANCE_FT)
+        ((merged["Local_Y"] - merged["ego_Local_Y"]).abs()
+         <= SURROUNDING_DISTANCE_FT)
     ].copy()
 
     # mark ego vehicle
@@ -60,10 +62,12 @@ def extract_scenario_window(df: pd.DataFrame, vehicle_id: int, mid_frame: int, s
     scenario_window["scenario_label"] = scenario_label
 
     # optional: distance from ego at each frame
-    scenario_window["distance_from_ego_y"] = scenario_window["Local_Y"] - scenario_window["ego_Local_Y"]
+    scenario_window["distance_from_ego_y"] = scenario_window["Local_Y"] - \
+        scenario_window["ego_Local_Y"]
 
     # clean ordering
-    scenario_window = scenario_window.sort_values(["Frame_ID", "Vehicle_ID"]).reset_index(drop=True)
+    scenario_window = scenario_window.sort_values(
+        ["Frame_ID", "Vehicle_ID"]).reset_index(drop=True)
 
     return scenario_window
 
@@ -90,7 +94,8 @@ def save_event_windows(df: pd.DataFrame, events: dict, output_dir="outputs_windo
 
             start_frame, end_frame = get_frame_window(mid_frame)
 
-            window_df = extract_scenario_window(df, vehicle_id, mid_frame, scenario)
+            window_df = extract_scenario_window(
+                df, vehicle_id, mid_frame, scenario)
 
             if window_df.empty:
                 continue
@@ -112,6 +117,7 @@ def save_event_windows(df: pd.DataFrame, events: dict, output_dir="outputs_windo
             })
 
     summary_df = pd.DataFrame(summary)
-    summary_df.to_csv(os.path.join(output_dir, "windows_summary.csv"), index=False)
+    summary_df.to_csv(os.path.join(
+        output_dir, "windows_summary.csv"), index=False)
 
     return summary_df
